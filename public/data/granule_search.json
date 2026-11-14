@@ -1,0 +1,53 @@
+{
+  "collection": "C3622241360-ASF",
+  "collection_name": "NISAR_L2_GCOV_V1",
+  "bbox": "Per-event bounding boxes",
+  "temporal": "Per-event before/after date windows",
+  "hits": 0,
+  "api_requests": {
+    "collections": "https://cmr.earthdata.nasa.gov/search/collections.json?keyword=NISAR&page_size=100",
+    "granules": "",
+    "event_granules": [
+      {
+        "event_id": "flood",
+        "url": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3622241360-ASF&bounding_box=91.0%2C24.1%2C92.5%2C25.4&temporal=2022-05-04T00%3A00%3A00Z%2C2022-06-21T23%3A59%3A59Z&page_size=200&sort_key%5B%5D=start_date"
+      },
+      {
+        "event_id": "glacier",
+        "url": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3622241360-ASF&bounding_box=-51.5%2C69.0%2C-49.5%2C69.4&temporal=2015-08-16T00%3A00%3A00Z%2C2024-08-03T23%3A59%3A59Z&page_size=200&sort_key%5B%5D=start_date"
+      },
+      {
+        "event_id": "wetland",
+        "url": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3622241360-ASF&bounding_box=-4.78%2C37.08%2C-4.68%2C37.18&temporal=2020-06-15T00%3A00%3A00Z%2C2023-06-20T23%3A59%3A59Z&page_size=200&sort_key%5B%5D=start_date"
+      }
+    ],
+    "concept_template": "https://cmr.earthdata.nasa.gov/search/concepts/<granule-concept-id>.umm_json"
+  },
+  "searches": [
+    {
+      "event_id": "flood",
+      "bbox": "91.0,24.1,92.5,25.4",
+      "temporal": "2022-05-04T00:00:00Z,2022-06-21T23:59:59Z",
+      "hits": "0",
+      "request_url": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3622241360-ASF&bounding_box=91.0%2C24.1%2C92.5%2C25.4&temporal=2022-05-04T00%3A00%3A00Z%2C2022-06-21T23%3A59%3A59Z&page_size=200&sort_key%5B%5D=start_date",
+      "entries": []
+    },
+    {
+      "event_id": "glacier",
+      "bbox": "-51.5,69.0,-49.5,69.4",
+      "temporal": "2015-08-16T00:00:00Z,2024-08-03T23:59:59Z",
+      "hits": "0",
+      "request_url": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3622241360-ASF&bounding_box=-51.5%2C69.0%2C-49.5%2C69.4&temporal=2015-08-16T00%3A00%3A00Z%2C2024-08-03T23%3A59%3A59Z&page_size=200&sort_key%5B%5D=start_date",
+      "entries": []
+    },
+    {
+      "event_id": "wetland",
+      "bbox": "-4.78,37.08,-4.68,37.18",
+      "temporal": "2020-06-15T00:00:00Z,2023-06-20T23:59:59Z",
+      "hits": "0",
+      "request_url": "https://cmr.earthdata.nasa.gov/search/granules.json?collection_concept_id=C3622241360-ASF&bounding_box=-4.78%2C37.08%2C-4.68%2C37.18&temporal=2020-06-15T00%3A00%3A00Z%2C2023-06-20T23%3A59%3A59Z&page_size=200&sort_key%5B%5D=start_date",
+      "entries": []
+    }
+  ],
+  "entries": []
+}

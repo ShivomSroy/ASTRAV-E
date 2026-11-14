@@ -1,7 +1,7 @@
 {
   "name": "radarlens",
   "version": "1.0.0",
-  "description": "RadarLens - NASA Space Apps NISAR challenge interactive radar change viewer",
+  "description": "Astrave - NASA Space Apps NISAR challenge interactive radar change viewer",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

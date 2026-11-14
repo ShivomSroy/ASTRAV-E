@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>How SAR works - RadarLens</title>
+  <title>How SAR works - Astrave</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="advisor.css">
   <script>
     (function () {
       try {
@@ -20,7 +19,6 @@
     })();
   </script>
   <script src="theme.js" defer></script>
-  <script src="advisor.js" defer></script>
 </head>
 <body class="steps-page">
 
@@ -41,8 +39,8 @@
           <a href="index.html">Home</a>
           <a href="viewer.html">Event viewer</a>
           <a href="how-sar.html" aria-current="page">How SAR works</a>
+          <a href="india.html">India first</a>
           <a href="data.html">Data sources</a>
-          <a href="#advisor" data-open-advisor>NISAR Advisor</a>
         </nav>
 
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
@@ -133,53 +131,16 @@
   </main>
 
   <footer class="foot">
-    <div class="wrap">RadarLens · Built for NASA Space Apps · Uses NISAR radar data</div>
+    <div class="wrap">Astrave · Built for NASA Space Apps · Uses NISAR radar data</div>
   </footer>
 
   <script>
-    function setupScrollHighlight() {
-      var steps = document.querySelectorAll('.step');
-      if (!steps.length) return;
-
-      if ('IntersectionObserver' in window) {
-        var observer = new IntersectionObserver(function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              steps.forEach(function (s) { s.classList.remove('is-active'); });
-              entry.target.classList.add('is-active');
-            }
-          });
-        }, {
-          threshold: 0.5,
-          rootMargin: '-10% 0px -20% 0px'
-        });
-
-        steps.forEach(function (step) {
-          observer.observe(step);
-        });
-      } else {
-        // Fallback for browsers without IntersectionObserver
-        window.addEventListener('scroll', function () {
-          var scrollPos = window.scrollY + 200;
-          steps.forEach(function (step) {
-            var top = step.offsetTop;
-            var height = step.offsetHeight;
-            if (scrollPos >= top && scrollPos < top + height) {
-              steps.forEach(function (s) { s.classList.remove('is-active'); });
-              step.classList.add('is-active');
-            }
-          });
-        });
-      }
-    }
-
     // Render steps dynamically from /api/steps
     fetch('/api/steps')
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (stepsData) {
         var container = document.querySelector('.radar-steps');
         if (!container || !Array.isArray(stepsData) || !stepsData.length) {
-          setupScrollHighlight();
           return;
         }
 
@@ -196,12 +157,9 @@
             '</div>';
           container.appendChild(stepDiv);
         });
-
-        setupScrollHighlight();
       })
       .catch(function (err) {
         console.warn('Could not fetch /api/steps, keeping fallback HTML:', err);
-        setupScrollHighlight();
       });
   </script>
 

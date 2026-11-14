@@ -1,0 +1,48 @@
+{
+  "events": [
+    {
+      "id": "assam_flood",
+      "bbox": "89.7,24.1,96.0,28.2",
+      "center": [26.2, 92.9],
+      "zoom": 7,
+      "temporal": "2026-06-01T00:00:00Z,2026-11-14T23:59:59Z",
+      "event_date_text": "2026 monsoon season",
+      "rain": {
+        "lat": 26.14,
+        "lon": 91.74,
+        "start": "20260601",
+        "end": "20261110"
+      },
+      "data_type": "nisar_if_found",
+      "analogue_source": "",
+      "layers": [],
+      "verify": true
+    },
+    {
+      "id": "joshimath_subsidence",
+      "bbox": "79.4,30.4,79.7,30.7",
+      "center": [30.556, 79.565],
+      "zoom": 12,
+      "temporal": "2026-06-01T00:00:00Z,2026-11-14T23:59:59Z",
+      "event_date_text": "Early 2023 (reported)",
+      "rain": null,
+      "data_type": "analogue",
+      "analogue_source": "",
+      "layers": [],
+      "verify": true
+    },
+    {
+      "id": "sikkim_glof",
+      "bbox": "88.0,27.2,88.6,28.1",
+      "center": [27.7, 88.4],
+      "zoom": 9,
+      "temporal": "2026-06-01T00:00:00Z,2026-11-14T23:59:59Z",
+      "event_date_text": "Early October 2023 (reported)",
+      "rain": null,
+      "data_type": "analogue",
+      "analogue_source": "",
+      "layers": [],
+      "verify": true
+    }
+  ]
+}

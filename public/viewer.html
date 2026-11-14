@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Event viewer - RadarLens</title>
+  <title>Event viewer - Astrave</title>
   <meta name="description" content="Compare NISAR radar images from before and after an event, with the change measured.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="advisor.css">
   <script>
     (function () {
       try {
@@ -21,7 +20,6 @@
     })();
   </script>
   <script src="theme.js" defer></script>
-  <script src="advisor.js" defer></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
@@ -257,6 +255,40 @@
       overflow: hidden;
       z-index: 1;
     }
+    .map-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px 20px;
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+    .map-controls label {
+      display: grid;
+      gap: 4px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .map-controls select,
+    .map-controls input {
+      accent-color: var(--accent);
+    }
+    .map-controls select {
+      min-height: 36px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--text);
+      font: inherit;
+    }
+    .map-controls input[type="range"] { min-width: 150px; }
+    .map-status { min-height: 1.5em; margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .map-layer-title { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 
     /* ---------- notes ---------- */
     .notes { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
@@ -296,8 +328,8 @@
           <a href="index.html">Home</a>
           <a href="viewer.html" aria-current="page">Event viewer</a>
           <a href="how-sar.html">How SAR works</a>
+          <a href="india.html">India first</a>
           <a href="data.html">Data sources</a>
-          <a href="#advisor" data-open-advisor>NISAR Advisor</a>
         </nav>
 
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
@@ -474,8 +506,24 @@
       <section class="viewer-section" aria-labelledby="map-h">
         <h2 id="map-h">Where is this?</h2>
 
+        <div class="map-controls" aria-label="Map controls">
+          <label for="map-layer-select">Basemap
+            <select id="map-layer-select">
+              <option value="osm">OpenStreetMap</option>
+              <option value="gibs" disabled>NASA GIBS imagery</option>
+            </select>
+          </label>
+          <label for="map-date">NASA imagery date
+            <input id="map-date" type="date" disabled>
+          </label>
+          <label for="map-opacity">NASA imagery opacity
+            <input id="map-opacity" type="range" min="0" max="100" value="100" disabled>
+          </label>
+        </div>
+        <p id="map-status" class="map-status" role="status" aria-live="polite">NASA GIBS layer details are loading.</p>
         <div id="map" role="region" aria-label="Interactive map of the study area"></div>
-        <p class="img-label">Map source: NASA Global Imagery Browse Services (GIBS) &amp; OpenStreetMap</p>
+        <p id="map-layer-title" class="map-layer-title">OpenStreetMap</p>
+        <p class="img-label">NASA GIBS provides pre-rendered context imagery only; it is not NISAR science data. NASA GIBS / ESDIS and OpenStreetMap attribution appear on the map.</p>
 
         <div class="actions">
           <a class="btn btn-main" href="how-sar.html">How does SAR work?</a>
@@ -487,12 +535,17 @@
   </main>
 
   <footer class="foot">
-    <div class="wrap">RadarLens · Built for NASA Space Apps · Uses NISAR radar data</div>
+    <div class="wrap">Astrave · Built for NASA Space Apps · Uses NISAR radar data</div>
   </footer>
 
+  <script src="cmr-data.js"></script>
   <script>
     var statusLoading = document.getElementById('status-loading');
     var statusError   = document.getElementById('status-error');
+    var savedGranuleSearch = AstraveCmr.load().catch(function (err) {
+      console.error('Could not read saved CMR granule metadata:', err);
+      return null;
+    });
 
     function showLoading() {
       statusError.hidden = true;
@@ -507,9 +560,294 @@
       statusError.hidden = true;
     }
 
-    // Leaflet Map & NASA GIBS Layer
+    // Leaflet map with a capabilities-validated NASA GIBS context layer.
+    var GIBS_CAPABILITIES_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/1.0.0/WMTSCapabilities.xml';
+    var GIBS_LAYER_ID = 'MODIS_Terra_CorrectedReflectance_TrueColor';
+    var WMTS_NAMESPACE = 'http://www.opengis.net/wmts/1.0';
+    var OWS_NAMESPACE = 'http://www.opengis.net/ows/1.1';
     var mapInstance = null;
     var bboxLayer = null;
+    var osmLayer = null;
+    var gibsLayer = null;
+    var gibsMetadataPromise = null;
+    var gibsMetadata = null;
+    var mapBaseLayer = 'osm';
+    var gibsTileErrorCount = 0;
+    var unavailableDateNotice = '';
+    var currentEventDate = null;
+
+    function setMapStatus(message) {
+      var status = document.getElementById('map-status');
+      if (status) status.textContent = message;
+    }
+
+    function directChildText(parent, namespace, name) {
+      for (var i = 0; i < parent.children.length; i++) {
+        var child = parent.children[i];
+        if (child.namespaceURI === namespace && child.localName === name) {
+          return child.textContent.trim();
+        }
+      }
+      return '';
+    }
+
+    function directChild(parent, namespace, name) {
+      for (var i = 0; i < parent.children.length; i++) {
+        var child = parent.children[i];
+        if (child.namespaceURI === namespace && child.localName === name) return child;
+      }
+      return null;
+    }
+
+    function parseGibsCapabilities(xmlText) {
+      var documentXml = new DOMParser().parseFromString(xmlText, 'application/xml');
+      if (documentXml.getElementsByTagName('parsererror').length) {
+        throw new Error('NASA GIBS returned invalid WMTS capabilities XML.');
+      }
+
+      var layers = documentXml.getElementsByTagNameNS(WMTS_NAMESPACE, 'Layer');
+      var layer = null;
+      for (var i = 0; i < layers.length; i++) {
+        if (directChildText(layers[i], OWS_NAMESPACE, 'Identifier') === GIBS_LAYER_ID) {
+          layer = layers[i];
+          break;
+        }
+      }
+      if (!layer) throw new Error('The configured NASA GIBS layer is not in WMTS capabilities.');
+
+      var title = directChildText(layer, OWS_NAMESPACE, 'Title');
+      var format = directChildText(layer, WMTS_NAMESPACE, 'Format');
+      var links = layer.getElementsByTagNameNS(WMTS_NAMESPACE, 'TileMatrixSetLink');
+      var matrixSet = links.length ? directChildText(links[0], WMTS_NAMESPACE, 'TileMatrixSet') : '';
+      var resources = layer.getElementsByTagNameNS(WMTS_NAMESPACE, 'ResourceURL');
+      var tileTemplate = '';
+      for (var resourceIndex = 0; resourceIndex < resources.length; resourceIndex++) {
+        if (resources[resourceIndex].getAttribute('resourceType') === 'tile') {
+          tileTemplate = resources[resourceIndex].getAttribute('template');
+          break;
+        }
+      }
+
+      var dimensions = layer.getElementsByTagNameNS(WMTS_NAMESPACE, 'Dimension');
+      var timeDimension = null;
+      for (var dimensionIndex = 0; dimensionIndex < dimensions.length; dimensionIndex++) {
+        if (directChildText(dimensions[dimensionIndex], OWS_NAMESPACE, 'Identifier') === 'Time') {
+          timeDimension = dimensions[dimensionIndex];
+          break;
+        }
+      }
+      var timeDefault = timeDimension ? directChildText(timeDimension, WMTS_NAMESPACE, 'Default') : '';
+      var timeValues = timeDimension ? timeDimension.getElementsByTagNameNS(WMTS_NAMESPACE, 'Value') : [];
+      var dateRanges = [];
+      for (var valueIndex = 0; valueIndex < timeValues.length; valueIndex++) {
+        var parts = timeValues[valueIndex].textContent.trim().split('/');
+        var start = parts[0];
+        var end = parts.length > 1 ? parts[1] : parts[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(start) && /^\d{4}-\d{2}-\d{2}$/.test(end)) {
+          dateRanges.push({ start: start, end: end });
+        }
+      }
+      dateRanges.sort(function (a, b) { return a.start.localeCompare(b.start); });
+
+      var matrixSets = documentXml.getElementsByTagNameNS(WMTS_NAMESPACE, 'TileMatrixSet');
+      var matrixSetNode = null;
+      for (var matrixIndex = 0; matrixIndex < matrixSets.length; matrixIndex++) {
+        if (directChildText(matrixSets[matrixIndex], OWS_NAMESPACE, 'Identifier') === matrixSet) {
+          matrixSetNode = matrixSets[matrixIndex];
+          break;
+        }
+      }
+      var matrixNodes = matrixSetNode ? matrixSetNode.getElementsByTagNameNS(WMTS_NAMESPACE, 'TileMatrix') : [];
+      var maxNativeZoom = -1;
+      for (var tileMatrixIndex = 0; tileMatrixIndex < matrixNodes.length; tileMatrixIndex++) {
+        var zoom = Number(directChildText(matrixNodes[tileMatrixIndex], OWS_NAMESPACE, 'Identifier'));
+        if (isFinite(zoom)) maxNativeZoom = Math.max(maxNativeZoom, zoom);
+      }
+
+      if (!title || !format || !matrixSet || !tileTemplate || !timeDefault || !dateRanges.length || maxNativeZoom < 0) {
+        throw new Error('NASA GIBS capabilities are missing required layer metadata.');
+      }
+      return {
+        title: title,
+        format: format,
+        matrixSet: matrixSet,
+        tileTemplate: tileTemplate,
+        timeDefault: timeDefault,
+        dateRanges: dateRanges,
+        maxNativeZoom: maxNativeZoom
+      };
+    }
+
+    function findNearestGibsDate(date, ranges) {
+      for (var i = 0; i < ranges.length; i++) {
+        if (date >= ranges[i].start && date <= ranges[i].end) return date;
+      }
+
+      var requestedTime = Date.parse(date + 'T00:00:00Z');
+      var nearest = ranges[0].start;
+      var nearestDistance = Math.abs(Date.parse(nearest + 'T00:00:00Z') - requestedTime);
+      ranges.forEach(function (range) {
+        [range.start, range.end].forEach(function (candidate) {
+          var distance = Math.abs(Date.parse(candidate + 'T00:00:00Z') - requestedTime);
+          if (distance < nearestDistance || (distance === nearestDistance && candidate < nearest)) {
+            nearest = candidate;
+            nearestDistance = distance;
+          }
+        });
+      });
+      return nearest;
+    }
+
+    function defaultGibsDate() {
+      if (currentEventDate) return currentEventDate;
+      if (gibsMetadata && gibsMetadata.timeDefault) return gibsMetadata.timeDefault;
+      var date = new Date();
+      if (date.getFullYear() > 2024) {
+        return '2024-08-03';
+      }
+      date.setDate(date.getDate() - 3);
+      var month = String(date.getMonth() + 1).padStart(2, '0');
+      var day = String(date.getDate()).padStart(2, '0');
+      return date.getFullYear() + '-' + month + '-' + day;
+    }
+
+    function gibsTileUrl(date) {
+      return gibsMetadata.tileTemplate
+        .replace('{Time}', date)
+        .replace('{TileMatrixSet}', gibsMetadata.matrixSet)
+        .replace('{TileMatrix}', '{z}')
+        .replace('{TileRow}', '{y}')
+        .replace('{TileCol}', '{x}');
+    }
+
+    function setBaseLayer(name) {
+      if (!mapInstance || !osmLayer) return;
+      mapBaseLayer = name;
+      if (!mapInstance.hasLayer(osmLayer)) {
+        osmLayer.addTo(mapInstance);
+      }
+      if (name === 'gibs' && gibsLayer) {
+        if (!mapInstance.hasLayer(gibsLayer)) {
+          gibsLayer.addTo(mapInstance);
+        }
+        gibsLayer.bringToFront();
+      } else {
+        if (gibsLayer && mapInstance.hasLayer(gibsLayer)) {
+          mapInstance.removeLayer(gibsLayer);
+        }
+        mapBaseLayer = 'osm';
+      }
+      if (bboxLayer) {
+        bboxLayer.bringToFront();
+      }
+      var layerSelect = document.getElementById('map-layer-select');
+      var layerTitle = document.getElementById('map-layer-title');
+      var dateInput = document.getElementById('map-date');
+      var opacityInput = document.getElementById('map-opacity');
+      if (layerSelect) layerSelect.value = mapBaseLayer;
+      if (dateInput) dateInput.disabled = mapBaseLayer !== 'gibs';
+      if (opacityInput) opacityInput.disabled = mapBaseLayer !== 'gibs';
+      if (layerTitle) {
+        layerTitle.textContent = mapBaseLayer === 'gibs' && gibsMetadata
+          ? 'NASA GIBS · ' + gibsMetadata.title
+          : 'OpenStreetMap';
+      }
+      if (mapBaseLayer === 'osm') {
+        setMapStatus('Showing OpenStreetMap basemap. Monitored study area outlined in orange.');
+      }
+    }
+
+    function refreshGibsTiles(date) {
+      if (!gibsLayer || !gibsMetadata) return;
+      gibsTileErrorCount = 0;
+      gibsLayer.setUrl(gibsTileUrl(date));
+      setMapStatus(unavailableDateNotice || 'Loading NASA GIBS imagery for ' + date + '.');
+    }
+
+    function initializeGibsLayer() {
+      if (gibsMetadataPromise) return gibsMetadataPromise;
+      gibsMetadataPromise = fetch(GIBS_CAPABILITIES_URL)
+        .then(function (response) {
+          if (!response.ok) throw new Error('NASA GIBS capabilities request failed (' + response.status + ').');
+          return response.text();
+        })
+        .then(function (xmlText) {
+          gibsMetadata = parseGibsCapabilities(xmlText);
+          if (gibsMetadata.format !== 'image/jpeg') {
+            throw new Error('The configured NASA GIBS layer format is not supported by this viewer.');
+          }
+          var dateInput = document.getElementById('map-date');
+          var layerSelect = document.getElementById('map-layer-select');
+          var opacityInput = document.getElementById('map-opacity');
+          var gibsOption = layerSelect && layerSelect.querySelector('option[value="gibs"]');
+          var date = findNearestGibsDate(defaultGibsDate(), gibsMetadata.dateRanges);
+
+          if (dateInput) {
+            dateInput.min = gibsMetadata.dateRanges[0].start;
+            dateInput.max = gibsMetadata.dateRanges[gibsMetadata.dateRanges.length - 1].end;
+            dateInput.value = date;
+            dateInput.disabled = false;
+          }
+          if (gibsOption) {
+            gibsOption.disabled = false;
+            gibsOption.textContent = 'NASA GIBS · ' + gibsMetadata.title;
+          }
+          if (opacityInput) opacityInput.disabled = false;
+
+          gibsLayer = L.tileLayer(gibsTileUrl(date), {
+            tileSize: 256,
+            maxNativeZoom: gibsMetadata.maxNativeZoom,
+            maxZoom: 18,
+            bounds: [[-85.0511, -180], [85.0511, 180]],
+            attribution: 'Imagery: <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs">NASA GIBS / ESDIS</a>'
+          });
+          gibsLayer.on('loading', function () {
+            gibsTileErrorCount = 0;
+            if (mapBaseLayer === 'gibs') setMapStatus(unavailableDateNotice || 'Loading NASA GIBS imagery for ' + dateInput.value + '.');
+          });
+          gibsLayer.on('tileerror', function () {
+            gibsTileErrorCount++;
+          });
+          gibsLayer.on('load', function () {
+            if (mapBaseLayer !== 'gibs') return;
+            if (gibsTileErrorCount) {
+              setMapStatus('Some NASA GIBS tiles are unavailable for this view or date. Choose another date or use OpenStreetMap.');
+            } else {
+              setMapStatus(unavailableDateNotice || 'NASA GIBS imagery date: ' + dateInput.value + '.');
+            }
+          });
+
+          if (dateInput) {
+            dateInput.addEventListener('change', function () {
+              var requestedDate = dateInput.value;
+              if (!requestedDate) return;
+              var availableDate = findNearestGibsDate(requestedDate, gibsMetadata.dateRanges);
+              unavailableDateNotice = availableDate === requestedDate
+                ? ''
+                : 'That date is unavailable for this GIBS layer; showing the nearest available date, ' + availableDate + '.';
+              dateInput.value = availableDate;
+              refreshGibsTiles(availableDate);
+            });
+          }
+          if (layerSelect) {
+            layerSelect.addEventListener('change', function () {
+              setBaseLayer(layerSelect.value);
+              if (mapBaseLayer === 'gibs') {
+                setMapStatus(unavailableDateNotice || 'NASA GIBS imagery date: ' + dateInput.value + '.');
+              }
+            });
+          }
+          if (opacityInput) {
+            opacityInput.addEventListener('input', function () {
+              if (gibsLayer) gibsLayer.setOpacity(Number(opacityInput.value) / 100);
+            });
+          }
+
+          setBaseLayer('osm');
+          return gibsMetadata;
+        });
+      return gibsMetadataPromise;
+    }
 
     function updateMap(bbox, title) {
       if (!Array.isArray(bbox) || bbox.length < 4 || typeof L === 'undefined') return;
@@ -521,25 +859,15 @@
           scrollWheelZoom: false
         });
 
-        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 18,
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         });
-
-        // NASA GIBS MODIS Terra True-Color WMTS layer
-        var gibsLayer = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2024-05-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg', {
-          maxZoom: 9,
-          attribution: 'Imagery &copy; <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs">NASA GIBS</a>'
-        });
-
         osmLayer.addTo(mapInstance);
-        gibsLayer.addTo(mapInstance);
-
-        L.control.layers(
-          { 'NASA GIBS Satellite': gibsLayer, 'OpenStreetMap': osmLayer },
-          null,
-          { position: 'topright' }
-        ).addTo(mapInstance);
+        initializeGibsLayer().catch(function (error) {
+          console.error('Could not initialize NASA GIBS imagery:', error);
+          setMapStatus('NASA GIBS imagery is unavailable. OpenStreetMap remains available.');
+        });
       }
 
       if (bboxLayer) {
@@ -557,10 +885,11 @@
 
       bboxLayer.bindPopup('<strong>' + (title || 'Study area') + '</strong><br>Monitored bounding box<br><small>S: ' + bbox[0] + ', W: ' + bbox[1] + ', N: ' + bbox[2] + ', E: ' + bbox[3] + '</small>');
       mapInstance.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
-      setTimeout(function () { if (mapInstance) mapInstance.invalidateSize(); }, 200);
+      setTimeout(function () { if (mapInstance) mapInstance.invalidateSize(); }, 100);
+      setTimeout(function () { if (mapInstance) mapInstance.invalidateSize(); }, 400);
     }
 
-    function fillPage(data) {
+    function fillPage(data, granuleSearch) {
       if (!data) return;
 
       // 1. Headline & Explanations
@@ -599,6 +928,31 @@
           ' · After: ' + (data.after ? data.after.date : 'N/A') +
           ' · Satellite: ' + beforeCred +
           ' · <span id="gap-days">' + (data.gapDays != null ? data.gapDays : '--') + '</span> days apart <small>(Sample data)</small>';
+
+        var granuleLabels = [];
+        [
+          ['Before', data.before],
+          ['After', data.after]
+        ].forEach(function (layer) {
+          var matches = AstraveCmr.matchingEntries(
+            granuleSearch, layer[1] && layer[1].date, data.id
+          );
+          matches.forEach(function (entry) {
+            var details = [];
+            var id = AstraveCmr.granuleId(entry);
+            var start = AstraveCmr.startDate(entry);
+            var collection = AstraveCmr.collectionName(granuleSearch, entry);
+            if (id) details.push('Granule ID: ' + id);
+            if (start) details.push('Acquisition start: ' + start);
+            if (collection) details.push('Collection: ' + collection);
+            if (details.length) granuleLabels.push(layer[0] + ': ' + details.join(' · '));
+          });
+        });
+        compareLabel.appendChild(document.createTextNode(
+          granuleLabels.length ? ' · ' + granuleLabels.join(' · ') :
+            (granuleSearch ? ' · No NISAR granules matched this event date and area' :
+              ' · Showing saved data')
+        ));
       }
 
       // 3. Stats & Progress Bars
@@ -641,19 +995,33 @@
 
       // 5. Leaflet Map
       if (data.bbox) {
+        currentEventDate = (data.after && data.after.date) || (data.before && data.before.date) || null;
         updateMap(data.bbox, data.title);
+        if (gibsMetadata && currentEventDate) {
+          var dateInput = document.getElementById('map-date');
+          var eventDate = findNearestGibsDate(currentEventDate, gibsMetadata.dateRanges);
+          if (dateInput) dateInput.value = eventDate;
+          if (mapBaseLayer === 'gibs') refreshGibsTiles(eventDate);
+        }
       }
     }
 
     function loadEvent(eventId) {
       showLoading();
-      fetch('/api/events/' + encodeURIComponent(eventId))
-        .then(function (r) {
+      Promise.all([
+        fetch('data/events.json').then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
-        })
-        .then(function (data) {
-          fillPage(data);
+        }),
+        savedGranuleSearch
+      ])
+        .then(function (events) {
+          var eventList = events[0];
+          var data = Array.isArray(eventList) && eventList.find(function (event) {
+            return event.id === eventId;
+          });
+          if (!data) throw new Error('Event not found: ' + eventId);
+          fillPage(data, events[1]);
           showContent();
         })
         .catch(function (err) {

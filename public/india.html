@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>India first - Astrave</title>
+  <meta name="description" content="A prototype explaining radar-based change for India using saved NASA metadata and context data.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('radarlens-theme') ||
+          (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+  <script src="theme.js" defer></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    .viewer-section { padding-block: 24px 0; }
+    .viewer-section:last-of-type { padding-bottom: 56px; }
+    .viewer-section h2 { font-size: 19px; font-weight: 800; margin-bottom: 8px; }
+    .viewer-section h3 { font-size: 16px; font-weight: 800; }
+    .viewer-section p + p { margin-top: 8px; }
+
+    .event-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .tab {
+      font: 600 15px/1 var(--font);
+      padding: 12px 20px;
+      border-radius: 99px;
+      border: 2px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .tab:hover { background: rgba(27, 108, 168, .1); }
+    .tab[aria-pressed="true"] { background: var(--accent); color: #fff; }
+    .status {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--muted);
+    }
+    .status[hidden] { display: none; }
+    .status.is-error { border-left: 4px solid var(--accent); color: var(--text); }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .panel h3 { font-size: 16px; font-weight: 800; }
+    .panel > .muted { margin-top: 4px; font-size: 15px; }
+    .panel .chip { display: inline-block; margin: 0 8px 8px 0; }
+    .notes { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+    .notes li { padding-left: 16px; position: relative; color: var(--muted); font-size: 15px; }
+    .notes li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .6em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    #map {
+      margin-top: 16px;
+      min-height: 320px;
+      width: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--card);
+      overflow: hidden;
+      z-index: 1;
+    }
+    .img-label { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+    .compare-block { margin-top: 16px; }
+    .compare {
+      --pos: 50%;
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      min-height: 240px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #1d2c3d;
+      touch-action: pan-y;
+    }
+    .compare .layer {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 16px;
+      color: #cfd9ee;
+      font-size: 15px;
+    }
+    .compare [hidden] { display: none; }
+    .compare .layer img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .compare .layer-before { background: #26405f; }
+    .compare .layer-after { background: #1b2e46; clip-path: inset(0 0 0 var(--pos)); }
+    .compare .layer span { position: relative; }
+    .tag {
+      position: absolute;
+      top: 12px;
+      z-index: 3;
+      padding: 2px 12px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(15, 31, 58, .85);
+      color: #fff;
+    }
+    .tag-before { left: 12px; }
+    .tag-after { right: 12px; }
+    .handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--pos);
+      width: 3px;
+      margin-left: -1.5px;
+      z-index: 2;
+      background: #fff;
+      pointer-events: none;
+    }
+    .handle::after {
+      content: "\2194";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 48px;
+      height: 48px;
+      transform: translate(-50%, -50%);
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--navy);
+      font-size: 22px;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+    }
+    .compare input[type="range"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      opacity: 0;
+      cursor: ew-resize;
+      z-index: 4;
+    }
+    .compare:focus-within { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .india-api-link { overflow-wrap: anywhere; word-break: break-word; }
+    #rain-chart { width: 100%; height: auto; display: block; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap bar">
+      <a class="brand" href="index.html" aria-label="ASTRAV//E home">
+        <svg class="logo" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+          <path class="l-sweep" d="M16 16 L16 2 A14 14 0 0 1 28.12 9 Z" fill="currentColor"/>
+          <circle class="l-ring" cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/>
+          <circle class="l-mid" cx="16" cy="16" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle class="l-ping" cx="16" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <span class="brand-text">ASTRAV<span class="brand-slash">//</span>E</span>
+      </a>
+
+      <div class="top-actions">
+        <nav aria-label="Main">
+          <a href="index.html">Home</a>
+          <a href="viewer.html">Event viewer</a>
+          <a href="how-sar.html">How SAR works</a>
+          <a href="india.html" aria-current="page">India first</a>
+          <a href="data.html">Data sources</a>
+        </nav>
+
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+          <span class="theme-toggle-track">
+            <svg class="icon-sun" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+          <span class="theme-text">Theme</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <div class="page-head">
+        <h1 id="page-title" lang="en">India first</h1>
+        <p id="page-intro" class="muted" lang="en">Radar sees through monsoon clouds. This page shows how NISAR and other NASA data can help us understand floods, sinking ground and glacial lake risk in India.</p>
+
+      </div>
+
+      <section class="viewer-section" aria-labelledby="problem-heading">
+        <article class="panel">
+          <h2 id="problem-heading" lang="en">Why radar matters</h2>
+          <p id="problem-text" lang="en">During the monsoon, clouds block normal satellite photos exactly when floods happen. Radar can see through them, but radar maps are hard to read. This page explains them in plain language.</p>
+          <p id="audience-purpose" lang="en">It is for people such as district officials, teachers, local reporters and students in India. This is a prototype for explanation, not a flood warning system.</p>
+        </article>
+      </section>
+
+      <section class="viewer-section" aria-labelledby="event-selector-heading">
+        <h2 id="event-selector-heading" lang="en">Choose an event</h2>
+        <div class="event-tabs" id="india-event-tabs" role="group" aria-label="Choose an event">
+          <button class="tab" type="button" data-event="assam_flood" aria-pressed="true" lang="en">Assam floods</button>
+          <button class="tab" type="button" data-event="joshimath_subsidence" aria-pressed="false" lang="en">Joshimath subsidence</button>
+          <button class="tab" type="button" data-event="sikkim_glof" aria-pressed="false" lang="en">Sikkim glacial lake flood</button>
+        </div>
+      </section>
+
+      <div id="event-unavailable" class="status" role="status" lang="en" hidden></div>
+
+      <section id="event-content" class="viewer-section" aria-live="polite" hidden>
+        <div class="headline">
+          <h2 id="event-heading"></h2>
+          <p id="event-date" class="muted"></p>
+          <p id="event-verify" class="img-label" hidden></p>
+        </div>
+
+        <section class="viewer-section" aria-labelledby="map-heading">
+          <h2 id="map-heading" lang="en">Study area</h2>
+          <div id="map" role="region" aria-label="Study area map"></div>
+          <p id="map-offline-note" class="status" role="status" lang="en" hidden></p>
+          <p id="map-disclaimer" class="img-label" lang="en">Basemap: NASA GIBS. Needs an internet connection.</p>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap" id="india-footer" lang="en">Astrave · India first</div>
+  </footer>
+
+  <script src="data/indiaStrings.js"></script>
+  <script src="cmr-data.js"></script>
+  <script src="india.js"></script>
+</body>
+</html>

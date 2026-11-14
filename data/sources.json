@@ -3,19 +3,25 @@
     "dataset": "NISAR L-band & S-band SAR (Proxy: Sentinel-1 & UAVSAR)",
     "usedFor": "The before and after views, change detection measurements, and backscatter analysis in the Event viewer",
     "provider": "NASA and ISRO (NISAR mission proxy data via ESA Copernicus & NASA JPL)",
-    "dateRange": "Sample data: May 2022 – Aug 2024"
+    "dateRange": "Sample data: May 2022 – Aug 2024",
+    "usedInProject": true,
+    "usedScope": "Analogue proxies only; no NISAR or S-band acquisitions are recorded."
   },
   {
     "dataset": "NASA GIBS Global WMTS Layer (MODIS / VIIRS Terra/Aqua)",
     "usedFor": "Interactive global context map and event boundary display powered by Leaflet",
     "provider": "NASA Global Imagery Browse Services (GIBS) / EOSDIS",
-    "dateRange": "Updated daily (Near Real-Time)"
+    "dateRange": "Updated daily (Near Real-Time)",
+    "usedInProject": true,
+    "usedScope": "MODIS Terra true-color GIBS layer is configured in the viewer."
   },
   {
     "dataset": "Optical Multispectral Imagery (Sentinel-2 & Landsat)",
     "usedFor": "Direct side-by-side comparison illustrating optical cloud blockage versus radar penetration",
     "provider": "European Union / ESA (Copernicus) & USGS / NASA",
-    "dateRange": "2020 – 2024 per event"
+    "dateRange": "2020 – 2024 per event",
+    "usedInProject": true,
+    "usedScope": "Sentinel-2 is referenced; Landsat is not recorded in event metadata."
   }
 ]
 

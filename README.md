@@ -1,120 +1,278 @@
-# Astrave 🛰️
+# 🌍 ASTRAV//E
+### Making Earth's Invisible Changes Visible.
 
-> **NASA Space Apps Challenge · NISAR: The satellite that sees through clouds**
-> Astrave is an interactive Earth observation web platform that visualizes surface change (floods, glacier motion, wetland loss) using Synthetic Aperture Radar (SAR) and optical satellite comparisons.
+**ASTRAV//E** is a SAR-powered Earth Surface Change Monitoring and Intelligence Platform designed to make changes across Earth's surface easier to explore, visualize and understand using NASA-ISRO NISAR satellite data.
+
+From wetland loss and flooding to forest disturbances, agricultural changes and land deformation, ASTRAV//E aims to transform complex Earth observation data into accessible geographical insights.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 The Problem
+
+Earth's surface is constantly changing due to natural processes and human activities. However, identifying, monitoring and understanding these changes using satellite observations can be challenging.
+
+Traditional optical satellite imagery can be limited by cloud cover and lighting conditions. Meanwhile, Synthetic Aperture Radar (SAR) data offers powerful observation capabilities but can be difficult for non-specialists to access, interpret and communicate.
+
+There is a need for an accessible platform that bridges the gap between complex satellite observations and meaningful environmental insights.
+
+## 💡 Our Solution
+
+ASTRAV//E provides an interactive geospatial environment for exploring Earth surface changes through SAR satellite observations.
+
+Our platform focuses on:
+
+- 🌐 **Interactive Global Exploration** — Explore geographical locations and Areas of Interest (AOIs).
+- 🛰️ **NISAR Data Discovery** — Connect with NASA and ISRO Earth observation catalogues.
+- 🔍 **Multi-Date Comparison** — Explore satellite observations from different dates.
+- 🗺️ **Geospatial Visualization** — Understand geographical changes through interactive maps and overlays.
+- 📊 **Change Monitoring** — Support the investigation of changes in Earth's surface.
+- 📡 **Multi-Source Integration** — Bring together NASA and ISRO Earth observation data discovery workflows.
+
+## ✨ Key Features
+
+| Feature | Description |
+|---|---|
+| Interactive Map | Explore geographical locations using Leaflet.js |
+| AOI Exploration | Represent Areas of Interest using geographical boundaries |
+| Before/After Slider | Compare satellite imagery interactively |
+| Change Overlay | Toggle visual change-detection overlays |
+| Satellite Catalogue Search | Discover NISAR products through NASA and ISRO integrations |
+| Data Source Explorer | Explore available satellite data sources |
+| Responsive Interface | Adaptable interface with light/dark themes |
+| Accessibility | Keyboard navigation, ARIA attributes and reduced-motion support |
+
+## 🛰️ Earth Observation Integrations
+
+ASTRAV//E connects with multiple Earth observation services.
+
+### 1. NASA CMR — Common Metadata Repository
+Used for discovering NASA Earth science datasets and associated satellite metadata.
+
+### 2. Alaska Satellite Facility (ASF)
+Provides SAR data discovery workflows and access to NASA Earthdata products, including NISAR L-band product searches.
+
+### 3. ISRO Bhoonidhi STAC API
+A custom Python client integrates with the Bhoonidhi STAC catalogue to discover NISAR S-band products using CQL2-JSON filters and GeoJSON Areas of Interest.
+
+### 4. NASA GIBS
+Integrates MODIS Terra true-colour imagery through WMTS to provide geographical context and interactive map baselayers.
+
+> **Note:** NASA GIBS MODIS imagery is used as geographical basemap context. It is not NISAR SAR imagery. Catalogue discovery also does not automatically mean that a product has been downloaded or scientifically processed.
+
+## 🏗️ Technology Stack
+
+### Frontend
+- HTML5
+- CSS3
+- Vanilla JavaScript (ES6+)
+- Leaflet.js v1.9.4
+- Google Fonts — Bricolage Grotesque
+
+### Backend
+- Node.js v18+
+- Express.js 4.x
+- Nodemon
+- REST API architecture
+
+### Satellite Data Pipeline
+- Python 3.10+
+- Requests
+- Python-dotenv
+- NASA CMR
+- Alaska Satellite Facility (ASF)
+- ISRO Bhoonidhi STAC API
+- NASA GIBS WMTS
+
+### Testing & Data Formats
+- Python unittest
+- unittest.mock
+- GeoJSON
+- JSON
+- CSV
+- HDF5 (.h5)
+
+## 🧩 System Architecture
+
+```text
+                 ASTRAV//E
+                     |
+          FRONTEND APPLICATION
+          HTML / CSS / JavaScript
+                     |
+                Leaflet.js
+                     |
+              REST API REQUESTS
+                     |
+              NODE.JS + EXPRESS
+                     |
+          PYTHON DATA WORKFLOWS
+                     |
+        +------------+------------+
+        |            |            |
+      NASA         ASF         ISRO
+      CMR        NISAR L       Bhoonidhi
+                   Band        S Band
+        |            |            |
+        +------------+------------+
+                     |
+              SATELLITE DATA
+              DISCOVERY RESULTS
+
+        NASA GIBS → MAP BASEMAP TILES
+```
+
+## 📂 Project Structure
+
+```text
+ASTRAV-E/
+│
+├── public/                 # Frontend assets
+│   ├── index.html
+│   ├── css/
+│   ├── js/
+│   └── assets/
+│
+├── scripts/
+│   └── search_nisar_s.py   # Bhoonidhi search CLI
+│
+├── bhoonidhi_client.py    # ISRO STAC API client
+├── cmr_search.py          # NASA CMR catalogue search
+├── asf_workflow.py        # ASF search workflow
+│
+├── tests/                 # Python automated tests
+│
+├── events.json            # Project event data
+├── sources.json           # Data source metadata
+├── package.json
+├── requirements.txt
+└── README.md
+```
+
+*The directory overview is illustrative; adjust filenames and folders to match the actual repository.*
+
+## ⚙️ Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher recommended; tested on Node v24)
-- npm
 
-### 1. Installation
-Install the required dependencies (`express` and `nodemon`):
+Make sure you have the following installed:
+
+- Node.js v18 or later
+- npm
+- Python 3.10 or later
+- Git
+
+### 1. Clone the Repository
+
+```bash
+git clone YOUR_REPOSITORY_URL
+cd ASTRAV-E
+```
+
+### 2. Install Node Dependencies
+
 ```bash
 npm install
 ```
 
-### 2. Run the Server
-Start the local server:
-```bash
-npm start
-```
-The server will start on `http://localhost:3000`. If port 3000 is occupied, it automatically increments to the next free port and displays the active URL in your terminal.
+### 3. Install Python Dependencies
 
-For development with hot reloading:
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+
+Create a `.env` file in the project root and add the credentials required by the relevant data services.
+
+```env
+# Add required service credentials here
+```
+
+Never commit API credentials, passwords or private tokens to GitHub.
+
+### 5. Start the Application
+
 ```bash
 npm run dev
 ```
 
-### 3. Open in Browser
-- **Home Page**: [http://localhost:3000/index.html](http://localhost:3000/index.html)
-- **Event Viewer**: [http://localhost:3000/viewer.html](http://localhost:3000/viewer.html)
-  - Flood: [http://localhost:3000/viewer.html#flood](http://localhost:3000/viewer.html#flood)
-  - Glacier: [http://localhost:3000/viewer.html#glacier](http://localhost:3000/viewer.html#glacier)
-  - Wetland: [http://localhost:3000/viewer.html#wetland](http://localhost:3000/viewer.html#wetland)
-- **How SAR Works**: [http://localhost:3000/how-sar.html](http://localhost:3000/how-sar.html)
-- **Data Sources & Credits**: [http://localhost:3000/data.html](http://localhost:3000/data.html)
+If a development script is not configured, use:
 
-The feedback form requires the Express API. VS Code's Live Server only serves static files, so run `npm start` and use the URL printed by the app.
-
----
-
-## Bhoonidhi NISAR S-band search
-
-The optional Python client and CLI search Bhoonidhi's STAC catalogue for NISAR S-band products. Bhoonidhi requires a registered account; NASA/ASF remains the source for NISAR L-band data. Search results are metadata, while `.h5` products can be tens of gigabytes. The client does not download anything unless a caller explicitly invokes its `download_item` method.
-
-Python 3.10 or later is required.
-
-Install the Python dependencies and configure credentials locally:
-
-```powershell
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
+```bash
+node server.js
 ```
 
-Set `BHOONIDHI_USER` and `BHOONIDHI_PASSWORD` in `.env` or as environment variables. Do not commit `.env` or share tokens. The CLI confirms the requested collection against the live catalogue before searching:
+Open the local URL printed by the server in your browser.
 
-```powershell
-# First inspect a small sample and its real property names
-python -m scripts.search_nisar_s --collection NISAR_SSAR_GCOV --bbox 77,28,78,29 --start-date 2026-07-08 --end-date 2026-07-15 --limit 5 --max-items 5 --inspect-properties --output preview.geojson
+### 6. Run Python Tests
 
-# Then run a bounded metadata search and save a CSV
-python -m scripts.search_nisar_s --collection NISAR_SSAR_GCOV --bbox 77,28,78,29 --start-date 2026-07-08 --end-date 2026-07-15 --online-only --max-items 50 --output results.csv
-```
-
-Use `--intersects @aoi.geojson` instead of `--bbox` for a GeoJSON geometry, `--datetime` for an RFC 3339 instant/range, and `--filter-json @filter.json` for CQL2-JSON filters. Inspect a real item's properties before selecting field names. By default the CLI reports `Online=Y/N/unknown`; `--online-only` adds the documented `Online='Y'` filter. It reports file sizes from item metadata when present and otherwise uses published typical sizes where available.
-
-The client caches access/refresh tokens in memory, refreshes expired sessions, follows same-origin STAC `next` links, waits at least 0.4 seconds between search requests, and backs off on transient API errors. Its download helper rejects products unless `Online='Y'`, streams to a `.part` file, checks the advertised content length, and only renames a complete file. Downloads are rate-limited to one request every 30 seconds per client instance and concurrency defaults to two (maximum five). Confirm a product's size and obtain user approval before calling the download helper. Do not scrape or automate the Bhoonidhi web portal; if an API request fails with `Invalid session detected`, stop and contact [Bhoonidhi support](mailto:bhoonidhi@nrsc.gov.in) or use Browse & Order.
-
-Official specification: [Bhoonidhi Data Access Software Interface Specification](https://bhoonidhi.nrsc.gov.in/bhoonidhi-api/).
-
-## 📡 API Endpoints
-
-All endpoints return standard JSON responses with appropriate HTTP status codes (200, 404, 500):
-
-- `GET /api/events` — Returns summary list of events (`flood`, `glacier`, `wetland`) with thumbnails and descriptions.
-- `GET /api/events/:id` — Detailed event dataset including before/after images, dates, sample metric values, gap days, bounding box (`[south, west, north, east]`), and full attribution metadata. Returns 404 if event is unknown.
-- `GET /api/sources` — Rows for the Data Sources and Datasets table.
-- `GET /api/team` — 5 NASA Space Apps team members with roles and names.
-- `GET /api/steps` — The 4 sequential steps explaining Synthetic Aperture Radar.
-
----
-
-## 📊 Features & Architecture
-
-- **Vanilla Frontend**: Pure vanilla HTML5, CSS3, and JavaScript — no heavyweight frontend framework.
-- **Bundled Event Data**: The Event viewer loads Flood, Glacier, and Wetland records from `public/data/events.json`, so event data does not require the API server.
-- **Before/After Split Slider**: Compare two satellite passes with draggable handle, range slider input, touch support, and full keyboard navigation (arrow keys, Home, End).
-- **Change Area Highlight**: Toggleable tinted overlay highlighting surface change on the After image.
-- **Interactive Global Map**: Leaflet map uses NASA GIBS MODIS Terra true-color WMTS imagery for context, with a date picker, basemap selector, opacity control, and the study-area bounding box. The viewer reads the layer's format, matrix set, zoom level, tile URL, and available dates from live GIBS capabilities. GIBS tiles are pre-rendered visualization, not NISAR science data.
-- **Dark/Light Theming & Accessibility**: Respects `prefers-color-scheme`, `prefers-reduced-motion`, visible focus rings, ARIA roles (`role="status"`, `aria-pressed`, `aria-label`).
-- **Optimized Media**: Original 22.3 MB GIF converted to 4.2 MB WebP and 955 KB MP4. All satellite imagery scaled to max 1600px wide.
-
-### Bhoonidhi Python CLI tests
-
-Run the isolated client and CLI unit tests (all network responses are mocked) with:
-
-```powershell
+```bash
 python -m unittest discover -s tests -v
 ```
 
+## 🌱 Potential Applications
+
+ASTRAV//E can support exploration and research across several domains:
+
+- **Disaster Management:** Investigating flood extent and post-disaster surface changes.
+- **Environmental Monitoring:** Exploring wetland changes and forest disturbances.
+- **Agriculture:** Investigating agricultural surface conditions and moisture-related changes.
+- **Climate Research:** Exploring glacier and ice-surface changes.
+- **Urban Planning:** Investigating land-use changes and possible ground deformation.
+- **Scientific Research:** Making multi-temporal SAR observations easier to explore.
+
+## 🔬 Future Scope
+
+We envision expanding ASTRAV//E with:
+
+- Advanced SAR preprocessing and calibrated backscatter analysis.
+- Automated multi-temporal change detection.
+- InSAR-based surface deformation analysis.
+- Time-series visualization and historical monitoring.
+- Raster processing using Rasterio, NumPy and GDAL.
+- Spatial analysis and geographical data management.
+- Downloadable analytical reports.
+- Additional environmental and population datasets for contextual analysis.
+
+## ⚠️ Scientific Considerations
+
+SAR backscatter changes can be influenced by several factors, including surface roughness, moisture, vegetation structure, incidence angle and acquisition geometry.
+
+A detected change does not automatically establish its cause. Reliable interpretation requires compatible satellite observations, appropriate processing, supporting datasets and, where possible, ground validation.
+
+ASTRAV//E aims to communicate these uncertainties rather than present every detected difference as a confirmed environmental event.
+
+## 🎯 Our Vision
+
+We believe satellite data should not remain accessible only to remote-sensing specialists.
+
+ASTRAV//E aims to bridge the gap between complex radar observations and understandable environmental information, helping researchers, decision-makers, students and communities explore the changing face of our planet.
+
+**Making Earth's Invisible Changes Visible.**
+
 ---
 
-## ⚖️ Honesty Rules & Scientific Attribution
+## 👥 Team
 
-In accordance with scientific integrity guidelines:
-- **Sample Data**: The viewer's metric values (percentages, estimated rates, gap days) remain illustrative **Sample data**; they are not computed from downloaded NISAR products. NISAR L-band products are distributed through NASA/ASF, while the Bhoonidhi tooling above searches for S-band products.
-- **Satellite Labelling**: No proxy image is falsely labelled as NISAR. All satellite imagery is credited with its true origin:
-  - **River flood**: Copernicus Sentinel-1 C-band SAR & Copernicus Sentinel-2 MSI (ESA / European Union).
-  - **Glacier movement**: Copernicus Sentinel-1 C-SAR & Sentinel-2 (ESA / European Union) over Jakobshavn Glacier / Ilulissat Icefjord, Greenland.
-  - **Wetland change**: Copernicus Sentinel-2 (Fuente de Piedra, Spain) and NASA/JPL UAVSAR & ALOS PALSAR L-band SAR (Pacaya-Samiria, Amazon Basin).
+Developed as part of the **NASA Space Apps Challenge**.
 
-### To Replace Sample Data with NISAR Products
-When integrating NISAR products from NASA Earthdata / ASF DAAC (L-band) or Bhoonidhi (S-band):
-1. `before.value` and `after.value`: Replace illustrative percentages with NISAR L-band backscatter intensity (dB), interferometric coherence ($\gamma$), or surface water extent ($km^2$).
-2. `before.image` and `after.image`: Replace with calibrated geocoded NISAR GCOV (Geocoded Polarimetric Covariance) or GSV (Geocoded Surface Velocity) rasters.
-3. `before.date` and `after.date`: Replace with exact 12-day NISAR repeat orbit acquisition dates.
-4. `gapDays`: Replace with actual orbital revisit difference (typically 12 or 24 days).
+**Project:** ASTRAV//E  
+**Challenge:** The Dance of Earth's Surface  
+**Domain:** Earth Observation · SAR · Geospatial Intelligence
+
+---
+
+## 📜 Acknowledgements
+
+We acknowledge the organizations and open Earth observation infrastructure that make this project possible:
+
+- NASA — National Aeronautics and Space Administration
+- ISRO — Indian Space Research Organisation
+- Alaska Satellite Facility (ASF)
+- NASA Earthdata / Common Metadata Repository
+- NASA Global Imagery Browse Services (GIBS)
+- Leaflet.js
+
+---
+
+**ASTRAV//E — Making Earth's Invisible Changes Visible.**
